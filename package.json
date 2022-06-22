@@ -1,0 +1,19 @@
+{
+  "name": "marketingrequestbot",
+  "version": "1.0.0",
+  "description": "LEAP Canada bot",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/khloe-r/MarketingRequestBot.git"
+  },
+  "author": "Khloe Ramdhan",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/khloe-r/MarketingRequestBot/issues"
+  },
+  "homepage": "https://github.com/khloe-r/MarketingRequestBot#readme",
+  "dependencies": {
+    "@slack/bolt": "^3.11.3"
+  }
+}
