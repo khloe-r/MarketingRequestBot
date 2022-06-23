@@ -188,6 +188,38 @@ app.view('marketing_request', async ({ ack, view, client, logger }) => {
   const requester = view.state.values['requester']['users_select-action']['selected_user'];
 
   let responsible = '';
+  let channel = '';
+  
+  switch(department) {
+    case "Video":
+      responsible = "U02BMAYL41F";
+      channel = "C02FJJB7KGU";
+      break;
+    case "Website Update":
+      responsible = "U02BMAYL41F";
+      channel = "G01FND37QFP";
+      break;
+    case "Graphic (For Social Media)":
+      responsible = "U01TKEZMFLY";
+      channel = "G015YGQP6A0";
+      break;
+    case "Graphic (Not for Posting)":
+      responsible = "U01TKEZDMEU";
+      channel = "G01AL7TMR9D";
+      break;
+    case "Newsletter Item":
+      responsible = "U03GJJM191C";
+      channel = "G0192EEJBFS" 
+      break;
+    case "Blog/Podcast":
+      responsible = "U03GJJM191C";
+      channel = "G0192EEJBFS" 
+      break;
+    default: 
+      responsible = "U01T1RNF5J8";
+      channel = "G019S5JBHDY" 
+      break;
+  }
   
   try {
     await client.chat.postMessage({
@@ -197,14 +229,14 @@ app.view('marketing_request', async ({ ack, view, client, logger }) => {
     			"type": "section",
     			"text": {
     				"type": "mrkdwn",
-    				"text": `New ${department} request for ${responsible}`
+    				"text": `New ${department} request for <@${responsible}>`
     			}
     		},
     		{
     			"type": "section",
     			"text": {
     				"type": "mrkdwn",
-    				"text": `*Task:* ${task}\n*Info:* ${info} \n*Deadline:* ${deadline}`
+    				"text": `*Task:* ${task}\n*Info:* ${info || 'No linked information'} \n*Deadline:* ${deadline}`
     			}
     		},
     		{
@@ -217,7 +249,8 @@ app.view('marketing_request', async ({ ack, view, client, logger }) => {
     						"emoji": true,
     						"text": "In Progress"
     					},
-    					"value": "click_me_123"
+    					"value": "in_progress",
+              "action_id": "in_progress"
     				},
     				{
     					"type": "button",
@@ -227,20 +260,20 @@ app.view('marketing_request', async ({ ack, view, client, logger }) => {
     						"text": "Complete"
     					},
     					"style": "primary",
-    					"value": "click_me_123"
+    					"value": "complete",
+              "action_id": "complete"
     				}
     			]
     		},
         {
-			"type": "context",
-			"elements": [
-				{
-					"type": "plain_text",
-					"text": "Sent from:",
-					"emoji": true
-				}
-			]
-		}
+    			"type": "context",
+    			"elements": [
+    				{
+    					"type": "mrkdwn",
+    					"text": `Sent from: <@${requester}>`,
+    				}
+    			]
+    		}
     	]
     });
   }
@@ -248,6 +281,53 @@ app.view('marketing_request', async ({ ack, view, client, logger }) => {
     logger.error(error);
   }
 
+});
+
+app.action('in_progress', async ({ body, ack, client }) => {
+  await ack();
+  try {
+    await client.reactions.add({
+      "name": "eyes",
+      "channel": body['container']['channel_id'],
+      "timestamp": body['container']['message_ts']
+    });
+  }
+  catch (error) {
+    logger.error(error);
+  }
+});
+
+app.action('complete', async ({ body, ack, client }) => {
+  await ack();
+  try {
+    await client.reactions.add({
+      "name": "white_check_mark",
+      "channel": body['container']['channel_id'],
+      "timestamp": body['container']['message_ts'],
+    });
+
+    const requester = body['message']['blocks'][3]['elements'][0]['text'].substring(11);
+    await client.chat.postMessage({
+      "channel": body['container']['channel_id'],
+      "blocks": [
+    		{
+    			"type": "section",
+    			"text": {
+    				"type": "mrkdwn",
+    				"text": `Your task is done ! ${requester}`,
+    			},
+    			"accessory": {
+    				"type": "image",
+    				"image_url": "https://source.unsplash.com/collection/56859352/480x480",
+    				"alt_text": "cute frog",
+    			}
+    		}
+    	]
+    });
+  }
+  catch (error) {
+    logger.error(error);
+  }
 });
 
 (async () => {
