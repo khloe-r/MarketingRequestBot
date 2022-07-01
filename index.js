@@ -1,12 +1,41 @@
 const { App } = require('@slack/bolt');
+const Sequelize = require("sequelize-cockroachdb");
+const http = require("http");
+
+http.createServer((_, res) => res.end("Alive")).listen(3000)
+
+const connectionString = process.env['DATABASE_URL']
+const sequelize = new Sequelize(connectionString)
 
 const app = new App({
   token: process.env['SLACK_BOT_TOKEN'],
   signingSecret: process.env['SLACK_SIGNING_SECRET'],
   socketMode: true, 
   appToken: process.env['SLACK_APP_TOKEN'],
-  port: process.env.PORT || 3000
 });
+
+const Tasks = sequelize.define("tasks", {
+  id: {
+    type: Sequelize.INTEGER,
+    primaryKey: true,
+  },
+  info: {
+    type: Sequelize.TEXT,
+  },
+  task: {
+    type: Sequelize.TEXT,
+  },
+  responsible: {
+    type: Sequelize.TEXT,
+  },
+  deadline: {
+    type: Sequelize.DATE,
+  },
+});
+
+app.command('/view-tasks', async ({ack, client}) => {
+  await ack();
+})
 
 app.command('/new-request', async ({ ack, body, client, logger }) => {
   await ack();
@@ -308,7 +337,7 @@ app.action('complete', async ({ body, ack, client }) => {
 
     const requester = body['message']['blocks'][3]['elements'][0]['text'].substring(11);
     await client.chat.postMessage({
-      "channel": body['container']['channel_id'],
+      "channel": 'C03MAUP6G2C',
       "blocks": [
     		{
     			"type": "section",
@@ -330,8 +359,20 @@ app.action('complete', async ({ body, ack, client }) => {
   }
 });
 
-(async () => {
-  await app.start();
+async function main () {
+  await app.start(process.env.PORT || 3000);
 
   console.log('⚡️ Bolt app is running!');
-})();
+
+ Tasks.findAll().then(function (tasks) {
+      // Print out the balances.
+      tasks.forEach(function (task) {
+        console.log(task.id + " " + task.task);
+      });
+    })
+    .catch(function (err) {
+      console.error("error: " + err.message);
+    });
+};
+
+main();
