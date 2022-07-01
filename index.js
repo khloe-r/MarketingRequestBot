@@ -17,6 +17,7 @@ const app = new App({
 const Tasks = sequelize.define("tasks", {
   id: {
     type: Sequelize.INTEGER,
+    autoIncrement: true,
     primaryKey: true,
   },
   info: {
@@ -29,12 +30,65 @@ const Tasks = sequelize.define("tasks", {
     type: Sequelize.TEXT,
   },
   deadline: {
-    type: Sequelize.DATE,
+    type: Sequelize.DATEONLY,
   },
 });
 
 app.command('/view-tasks', async ({ack, client}) => {
   await ack();
+  const task_report = [
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "Open Tasks",
+				"emoji": true
+			}
+		}
+  ];
+
+  await Tasks.findAll().then(function (tasks) {
+      if (tasks.length === 0) {
+        task_report.push({
+    			"type": "section",
+    			"text": {
+    				"type": "mrkdwn",
+    				"text": `No tasks open right now.\nGreat job team!\n`
+    			}
+    		})
+      }
+      tasks.forEach(function (task) {
+        console.log(task.id + " " + task.task);
+        task_report.push({
+    			"type": "section",
+    			"text": {
+    				"type": "mrkdwn",
+    				"text": `*Task for <@${task.responsible}>*: ${task.task} \n *Due:* ${task.deadline} \n`
+    			}
+    		})
+      });
+    })
+    .catch(function (err) {
+      console.error("error: " + err.message);
+    });
+
+  const today = new Date();
+  const date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  task_report.push({
+    "type": "context",
+    "elements": [
+      {
+        "type": "plain_text",
+        "text": `Report generated at ${date}`,
+        "emoji": true
+      }
+    ]
+  })
+  
+  await client.chat.postMessage({
+    "channel": 'C03MAUP6G2C',
+    "blocks": task_report
+  });
 })
 
 app.command('/new-request', async ({ ack, body, client, logger }) => {
@@ -169,7 +223,6 @@ app.command('/new-request', async ({ ack, body, client, logger }) => {
       			},
       			"accessory": {
       				"type": "datepicker",
-      				"initial_date": "2022-06-25",
       				"placeholder": {
       					"type": "plain_text",
       					"text": "Select a date",
@@ -249,66 +302,96 @@ app.view('marketing_request', async ({ ack, view, client, logger }) => {
       channel = "G019S5JBHDY" 
       break;
   }
+
+  const row = await Tasks.create({
+    info: info,
+    task: task,
+    responsible: responsible,
+    deadline: deadline,
+  })
   
   try {
     await client.chat.postMessage({
       channel: 'C03MAUP6G2C',
       "blocks": [
-    		{
-    			"type": "section",
-    			"text": {
-    				"type": "mrkdwn",
-    				"text": `New ${department} request for <@${responsible}>`
-    			}
-    		},
-    		{
-    			"type": "section",
-    			"text": {
-    				"type": "mrkdwn",
-    				"text": `*Task:* ${task}\n*Info:* ${info || 'No linked information'} \n*Deadline:* ${deadline}`
-    			}
-    		},
-    		{
-    			"type": "actions",
-    			"elements": [
-    				{
-    					"type": "button",
-    					"text": {
-    						"type": "plain_text",
-    						"emoji": true,
-    						"text": "In Progress"
-    					},
-    					"value": "in_progress",
-              "action_id": "in_progress"
-    				},
-    				{
-    					"type": "button",
-    					"text": {
-    						"type": "plain_text",
-    						"emoji": true,
-    						"text": "Complete"
-    					},
-    					"style": "primary",
-    					"value": "complete",
-              "action_id": "complete"
-    				}
-    			]
-    		},
         {
-    			"type": "context",
-    			"elements": [
-    				{
-    					"type": "mrkdwn",
-    					"text": `Sent from: <@${requester}>`,
-    				}
-    			]
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": `New ${department} request for <@${responsible}>`
+          }
+        },
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": `*Task:* ${task}\n*Info:* ${info || 'No linked information'} \n*Deadline:* ${deadline}`
+          }
+        },
+        {
+          "type": "actions",
+          "elements": [
+            {
+              "type": "button",
+              "text": {
+                "type": "plain_text",
+                "emoji": true,
+                "text": "In Progress"
+              },
+              "value": "in_progress",
+              "action_id": "in_progress"
+            },
+            {
+              "type": "button",
+              "text": {
+                "type": "plain_text",
+                "emoji": true,
+                "text": "Complete"
+              },
+              "style": "primary",
+              "value": "complete",
+              "action_id": "complete"
+            }
+          ]
+        },
+        {
+          "type": "context",
+          "elements": [
+            {
+              "type": "mrkdwn",
+              "text": `Sent from: <@${requester}>`,
+            }
+          ]
+        },
+        {
+          "type": "context",
+          "elements": [
+            {
+              "type": "mrkdwn",
+              "text": `Task #${row.id}`,
+            }
+          ]
+        }
+      ]
+    });
+
+    await client.chat.postMessage({
+      channel: requester,
+      "blocks": [
+    		{
+    			"type": "section",
+    			"text": {
+    				"type": "mrkdwn",
+    				"text": "Hello, your task has been submitted! 🐸 \n Stay tuned for a message in #marketing-requests when your task has been completed!"
+    			}
     		}
     	]
-    });
+    })
   }
   catch (error) {
     logger.error(error);
   }
+  
 
 });
 
@@ -336,6 +419,13 @@ app.action('complete', async ({ body, ack, client }) => {
     });
 
     const requester = body['message']['blocks'][3]['elements'][0]['text'].substring(11);
+    const task_id = body['message']['blocks'][4]['elements'][0]['text'].substring(6);
+
+    await Tasks.destroy({
+      where: {
+        id: task_id
+      }
+    })
     await client.chat.postMessage({
       "channel": 'C03MAUP6G2C',
       "blocks": [
@@ -363,16 +453,6 @@ async function main () {
   await app.start(process.env.PORT || 3000);
 
   console.log('⚡️ Bolt app is running!');
-
- Tasks.findAll().then(function (tasks) {
-      // Print out the balances.
-      tasks.forEach(function (task) {
-        console.log(task.id + " " + task.task);
-      });
-    })
-    .catch(function (err) {
-      console.error("error: " + err.message);
-    });
 };
 
 main();
