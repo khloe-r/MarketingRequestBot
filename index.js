@@ -86,7 +86,7 @@ app.command('/view-tasks', async ({ack, client}) => {
   })
   
   await client.chat.postMessage({
-    "channel": 'C03MAUP6G2C',
+    "channel": 'G019S5JBHDY',
     "blocks": task_report
   });
 })
@@ -312,7 +312,7 @@ app.view('marketing_request', async ({ ack, view, client, logger }) => {
   
   try {
     await client.chat.postMessage({
-      channel: 'C03MAUP6G2C',
+      channel: channel,
       "blocks": [
         {
           "type": "section",
