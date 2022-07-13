@@ -28,7 +28,7 @@ Each message contains a In Progress button (reacts to message with 👀) and Com
 
 ## How to Use
 
-* Visit [api.slack.com](api.slack.com) for instructions to set up your bot on your desired Slack workspace
+* Visit [api.slack.com](https://api.slack.com/) for instructions to set up your bot on your desired Slack workspace
 * Clone this repo and run `npm install`
 * Create environmental variables for `SLACK_SIGNING_SECRET`, `SLACK_BOT_TOKEN` and `SLACK_APP_TOKEN` from the Slack API website
 * Set up a CockroachDB cluster and create another environmental variable for your `DATABASE_URL`
