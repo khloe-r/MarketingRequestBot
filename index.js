@@ -282,7 +282,7 @@ app.view('marketing_request', async ({ ack, view, client, logger }) => {
       channel = "G01FND37QFP";
       break;
     case "Graphic (For Social Media)":
-      responsible = "U01TKEZMFLY";
+      responsible = "U02RVR5TMAP";
       channel = "G015YGQP6A0";
       break;
     case "Graphic (Not for Posting)":

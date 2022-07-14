@@ -11,20 +11,20 @@ Commands:
 * sends message to responsible department channel to complete task
 * sends direct message to member sending request to confirm it has been created
 
-![Direct message from bot](new_request.png)
+![Direct message from bot](images/new_request.png)
 
 `/view-tasks` 
 
 * generates a report of all not completed tasks to help check status
   
-![Task report](view_tasks.png)
+![Task report](images/view_tasks.png)
 
 **Preview**
-![Bot message for task request](task_request.png)
+![Bot message for task request](images/task_request.png)
 
 Each message contains a In Progress button (reacts to message with 👀) and Complete button (reacts to message with ✅ and deletes task from database)
 
-![Confirmation message](confirm.png)
+![Confirmation message](images/confirm.png)
 
 ## How to Use
 
