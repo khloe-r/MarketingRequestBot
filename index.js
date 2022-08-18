@@ -10,7 +10,7 @@ const sequelize = new Sequelize(connectionString)
 const app = new App({
   token: process.env['SLACK_BOT_TOKEN'],
   signingSecret: process.env['SLACK_SIGNING_SECRET'],
-  socketMode: true, 
+  socketMode: true,
   appToken: process.env['SLACK_APP_TOKEN'],
 });
 
@@ -34,46 +34,63 @@ const Tasks = sequelize.define("tasks", {
   },
 });
 
-app.command('/view-tasks', async ({ack, client}) => {
+app.command('/view-tasks', async ({ ack, client }) => {
   await ack();
   const task_report = [
-		{
-			"type": "header",
-			"text": {
-				"type": "plain_text",
-				"text": "Open Tasks",
-				"emoji": true
-			}
-		}
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "Open Tasks",
+        "emoji": true
+      }
+    }
   ];
 
-  await Tasks.findAll().then(function (tasks) {
-      if (tasks.length === 0) {
-        task_report.push({
-    			"type": "section",
-    			"text": {
-    				"type": "mrkdwn",
-    				"text": `No tasks open right now.\nGreat job team!\n`
-    			}
-    		})
-      }
-      tasks.forEach(function (task) {
-        console.log(task.id + " " + task.task);
-        task_report.push({
-    			"type": "section",
-    			"text": {
-    				"type": "mrkdwn",
-    				"text": `*Task for <@${task.responsible}>*: ${task.task} \n *Due:* ${task.deadline} \n`
-    			}
-    		})
-      });
-    })
-    .catch(function (err) {
+  await Tasks.findAll().then(function(tasks) {
+    if (tasks.length === 0) {
+      task_report.push({
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": `No tasks open right now.\nGreat job team!\n`
+        }
+      })
+    }
+    tasks.forEach(function(task) {
+      console.log(task.id + " " + task.task);
+      task_report.push({
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": `*Task for <@${task.responsible}>*: ${task.task} \n *Due:* ${task.deadline} \n`
+        }
+      })
+      task_report.push(
+        {
+          "type": "actions",
+          "elements": [
+            {
+              "type": "button",
+              "text": {
+                "type": "plain_text",
+                "emoji": true,
+                "text": `Complete Task #${task.responsible}`
+              },
+              "style": "primary",
+              "value": task.id,
+              "action_id": "complete_v2"
+            }
+          ]
+        })
+    });
+  })
+    .catch(function(err) {
       console.error("error: " + err.message);
     });
 
   const today = new Date();
-  const date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  const date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
   task_report.push({
     "type": "context",
     "elements": [
@@ -84,7 +101,7 @@ app.command('/view-tasks', async ({ack, client}) => {
       }
     ]
   })
-  
+
   await client.chat.postMessage({
     "channel": 'G019S5JBHDY',
     "blocks": task_report
@@ -192,7 +209,7 @@ app.command('/new-request', async ({ ack, body, client, logger }) => {
             block_id: 'task_required',
             label: {
               type: 'plain_text',
-              text: 'What task do you need help with?'
+              text: 'What task do you need help with? Provide as many details as you can!'
             },
             element: {
               type: 'plain_text_input',
@@ -215,39 +232,39 @@ app.command('/new-request', async ({ ack, body, client, logger }) => {
             }
           },
           {
-      			"type": "section",
+            "type": "section",
             block_id: 'deadline',
-      			"text": {
-      				"type": "mrkdwn",
-      				"text": "When do you need the task done for"
-      			},
-      			"accessory": {
-      				"type": "datepicker",
-      				"placeholder": {
-      					"type": "plain_text",
-      					"text": "Select a date",
-      					"emoji": true
-      				},
-      				"action_id": "datepicker-action"
-      			},
-      		},
+            "text": {
+              "type": "mrkdwn",
+              "text": "When do you need the task done for? Please send requests at least 2 weeks in advance!"
+            },
+            "accessory": {
+              "type": "datepicker",
+              "placeholder": {
+                "type": "plain_text",
+                "text": "Select a date",
+                "emoji": true
+              },
+              "action_id": "datepicker-action"
+            },
+          },
           {
-      			"type": "section",
+            "type": "section",
             block_id: 'requester',
-      			"text": {
-      				"type": "mrkdwn",
-      				"text": "Who should marketing be in contact with about this request?"
-      			},
-      			"accessory": {
-      				"type": "users_select",
-      				"placeholder": {
-      					"type": "plain_text",
-      					"text": "Select a user",
-      					"emoji": true
-      				},
-      				"action_id": "users_select-action"
-      			}
-      		}
+            "text": {
+              "type": "mrkdwn",
+              "text": "Who should marketing be in contact with about this request? Enter your name!"
+            },
+            "accessory": {
+              "type": "users_select",
+              "placeholder": {
+                "type": "plain_text",
+                "text": "Select a user",
+                "emoji": true
+              },
+              "action_id": "users_select-action"
+            }
+          }
         ],
         submit: {
           type: 'plain_text',
@@ -263,7 +280,7 @@ app.command('/new-request', async ({ ack, body, client, logger }) => {
 
 app.view('marketing_request', async ({ ack, view, client, logger }) => {
   await ack();
-  const info =  view.state.values['info_docs']['info_input'].value;
+  const info = view.state.values['info_docs']['info_input'].value;
   const task = view.state.values['task_required']['task_input'].value;
   const deadline = view.state.values['deadline']['datepicker-action']['selected_date'];
   const department = view.state.values['department']['static_select-action']['selected_option']['text']['text'];
@@ -271,18 +288,18 @@ app.view('marketing_request', async ({ ack, view, client, logger }) => {
 
   let responsible = '';
   let channel = '';
-  
-  switch(department) {
+
+  switch (department) {
     case "Video":
       responsible = "U02BMAYL41F";
-      channel = "C02FJJB7KGU";
+      channel = "G01AL7TMR9D";
       break;
     case "Website Update":
       responsible = "U02BMAYL41F";
       channel = "G01FND37QFP";
       break;
     case "Graphic (For Social Media)":
-      responsible = "U02RVR5TMAP";
+      responsible = "U01T1RNF5J8";
       channel = "G015YGQP6A0";
       break;
     case "Graphic (Not for Posting)":
@@ -291,15 +308,15 @@ app.view('marketing_request', async ({ ack, view, client, logger }) => {
       break;
     case "Newsletter Item":
       responsible = "U03GJJM191C";
-      channel = "G0192EEJBFS" 
+      channel = "G0192EEJBFS"
       break;
     case "Blog/Podcast":
       responsible = "U03GJJM191C";
-      channel = "G0192EEJBFS" 
+      channel = "G0192EEJBFS"
       break;
-    default: 
-      responsible = "U01T1RNF5J8";
-      channel = "G019S5JBHDY" 
+    default:
+      responsible = "U01TKEZDMEU";
+      channel = "G019S5JBHDY"
       break;
   }
 
@@ -309,7 +326,7 @@ app.view('marketing_request', async ({ ack, view, client, logger }) => {
     responsible: responsible,
     deadline: deadline,
   })
-  
+
   try {
     await client.chat.postMessage({
       channel: channel,
@@ -378,20 +395,20 @@ app.view('marketing_request', async ({ ack, view, client, logger }) => {
     await client.chat.postMessage({
       channel: requester,
       "blocks": [
-    		{
-    			"type": "section",
-    			"text": {
-    				"type": "mrkdwn",
-    				"text": "Hello, your task has been submitted! 🐸 \n Stay tuned for a message in #marketing-requests when your task has been completed!"
-    			}
-    		}
-    	]
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "Hello, your task has been submitted! 🐸 \n Stay tuned for a message in #marketing-requests when your task has been completed!"
+          }
+        }
+      ]
     })
   }
   catch (error) {
     logger.error(error);
   }
-  
+
 
 });
 
@@ -408,6 +425,40 @@ app.action('in_progress', async ({ body, ack, client }) => {
     logger.error(error);
   }
 });
+
+app.action('complete_v2', async ({ body, ack, client }) => {
+  await ack();
+  console.log(body)
+  console.log(body.actions[0].value)
+  console.log(body.actions[0].text.text.slice(15))
+
+  const task_id = body.actions[0].value;
+  const requester = body.actions[0].text.text.slice(15);
+
+  await Tasks.destroy({
+    where: {
+      id: task_id
+    }
+  })
+
+  await client.chat.postMessage({
+    "channel": 'C03MAUP6G2C',
+    "blocks": [
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": `Your task is done ! <@${requester}>`,
+        },
+        "accessory": {
+          "type": "image",
+          "image_url": "https://source.unsplash.com/collection/56859352/480x480",
+          "alt_text": "cute frog",
+        }
+      }
+    ]
+  });
+})
 
 app.action('complete', async ({ body, ack, client }) => {
   await ack();
@@ -426,22 +477,23 @@ app.action('complete', async ({ body, ack, client }) => {
         id: task_id
       }
     })
+
     await client.chat.postMessage({
       "channel": 'C03MAUP6G2C',
       "blocks": [
-    		{
-    			"type": "section",
-    			"text": {
-    				"type": "mrkdwn",
-    				"text": `Your task is done ! ${requester}`,
-    			},
-    			"accessory": {
-    				"type": "image",
-    				"image_url": "https://source.unsplash.com/collection/56859352/480x480",
-    				"alt_text": "cute frog",
-    			}
-    		}
-    	]
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": `Your task is done ! ${requester}`,
+          },
+          "accessory": {
+            "type": "image",
+            "image_url": "https://source.unsplash.com/collection/56859352/480x480",
+            "alt_text": "cute frog",
+          }
+        }
+      ]
     });
   }
   catch (error) {
@@ -449,7 +501,7 @@ app.action('complete', async ({ body, ack, client }) => {
   }
 });
 
-async function main () {
+async function main() {
   await app.start(process.env.PORT || 3000);
 
   console.log('⚡️ Bolt app is running!');
