@@ -342,12 +342,39 @@ app.view('marketing_request', async ({ ack, view, client, logger }) => {
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": `*Task:* ${task}\n*Info:* ${info || 'No linked information'} \n*Deadline:* ${deadline}`
+            "text": `*Deadline:* ${deadline}`
           }
         },
         {
           "type": "actions",
           "elements": [
+            {
+              "type": "button",
+              "text": {
+                "type": "plain_text",
+                "emoji": true,
+                "text": "View Task Info"
+              },
+              "style": "primary",
+              "confirm": {
+                "title": {
+                    "type": "plain_text",
+                    "text": "Full Task Info"
+                },
+                "text": {
+                    "type": "mrkdwn",
+                    "text": `Task: ${task}\n\nInfo: ${info || 'No linked information'}`
+                },
+                "confirm": {
+                    "type": "plain_text",
+                    "text": "Got it!"
+                },
+                "deny": {
+                    "type": "plain_text",
+                    "text": "Close"
+                }
+              }
+            },
             {
               "type": "button",
               "text": {
